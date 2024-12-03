@@ -75,14 +75,18 @@ export function registerAttribute(
         for (let removedNode of record.removedNodes) {
           if (removedNode instanceof Element) {
             if (removedNode.hasAttribute(name)) {
-              if (observedElements.has(removedNode))
+              if (observedElements.has(removedNode)) {
                 observedElements.get(removedNode)?.disconnectedCallback();
-            } else {
-              removedNode.querySelectorAll(`[${name}]`).forEach((node) => {
-                if (observedElements.has(node))
-                  observedElements.get(node)?.disconnectedCallback();
-              });
+                observedElements.delete(removedNode);
+              }
             }
+
+            removedNode.querySelectorAll(`[${name}]`).forEach((node) => {
+              if (observedElements.has(node)) {
+                observedElements.get(node)?.disconnectedCallback();
+                observedElements.delete(node);
+              }
+            });
           }
         }
         return;
@@ -93,11 +97,10 @@ export function registerAttribute(
           if (addedNode instanceof Element) {
             if (addedNode.hasAttribute(name)) {
               newAttribute(addedNode);
-            } else {
-              addedNode.querySelectorAll(`[${name}]`).forEach((node) => {
-                newAttribute(node);
-              });
             }
+            addedNode.querySelectorAll(`[${name}]`).forEach((node) => {
+              newAttribute(node);
+            });
           }
         }
         return;

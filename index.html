@@ -4,9 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <script src="test.js"></script>
+    <script type="module" src="/test.js"></script>
   </head>
   <body>
-    <h1>Hello, this is Patrick.</h1>
+    <h1 testing-attribute="test" data-testid="el">Hello, this is Patrick.</h1>
+    <p data-testid="paragraph">Just a regular paragraph.</p>
+    <custom-element>
+      <template shadowrootmode="open">
+        <h2 data-testid="shadow-title">Some shadow DOM</h2>
+        <slot></slot>
+      </template>
+      <p data-testid="slotted-element">Some slotted content</p>
+    </custom-element>
   </body>
 </html>
