@@ -41,6 +41,14 @@ export class CustomAttribute {
   }
 }
 
+/**
+ * Register a custom attribute
+ * @param {string} name The name of the custom attribute
+ * @param {CustomAttribute.constructor} customAttribute Class for the custom attribute
+ * @param {HTMLElement} [root=document] Root node for scoping mutation observers
+ * @param {boolean} [childList=false] Specify if children of root should be observed as well
+ * @returns
+ */
 export function registerAttribute(
   name,
   customAttribute,
@@ -73,35 +81,40 @@ export function registerAttribute(
       // Element (or parent of element) got removed
       if (record.type === "childList" && record.removedNodes.length > 0) {
         for (let removedNode of record.removedNodes) {
-          if (removedNode instanceof Element) {
-            if (removedNode.hasAttribute(name)) {
-              if (observedElements.has(removedNode)) {
-                observedElements.get(removedNode)?.disconnectedCallback();
-                observedElements.delete(removedNode);
-              }
-            }
-
-            removedNode.querySelectorAll(`[${name}]`).forEach((node) => {
-              if (observedElements.has(node)) {
-                observedElements.get(node)?.disconnectedCallback();
-                observedElements.delete(node);
-              }
-            });
+          if (!(removedNode instanceof Element)) {
+            continue;
           }
+          if (
+            removedNode.hasAttribute(name) &&
+            observedElements.has(removedNode)
+          ) {
+            observedElements.get(removedNode)?.disconnectedCallback();
+            observedElements.delete(removedNode);
+          }
+
+          // Call disconnected callback on all removed child nodes
+          removedNode.querySelectorAll(`[${name}]`).forEach((node) => {
+            if (observedElements.has(node)) {
+              observedElements.get(node)?.disconnectedCallback();
+              observedElements.delete(node);
+            }
+          });
         }
         return;
       }
+
       // Element with attribute got added
       if (record.type === "childList" && record.addedNodes.length > 0) {
         for (let addedNode of record.addedNodes) {
-          if (addedNode instanceof Element) {
-            if (addedNode.hasAttribute(name)) {
-              newAttribute(addedNode);
-            }
-            addedNode.querySelectorAll(`[${name}]`).forEach((node) => {
-              newAttribute(node);
-            });
+          if (!(addedNode instanceof Element)) {
+            continue;
           }
+          if (addedNode.hasAttribute(name)) {
+            newAttribute(addedNode);
+          }
+          addedNode.querySelectorAll(`[${name}]`).forEach((node) => {
+            newAttribute(node);
+          });
         }
         return;
       }
@@ -130,6 +143,10 @@ export function registerAttribute(
     }
   }
 
+  /**
+   * Initiate a new instance
+   * @param {HTMLElement} element Element with target attribute
+   */
   function newAttribute(element) {
     const cls = new customAttribute(name, element);
     cls.connectedCallback(element.getAttribute(name));
@@ -147,6 +164,8 @@ export function registerAttribute(
   } else if (root instanceof Element) {
     newAttribute(root);
   } else {
-    // Throw error or what?
+    throw new Error(
+      `Custom Attribute: Can't register custom attribute on root (${root}) of type ${typeof root}. Root must be a valid element node.`
+    );
   }
 }
