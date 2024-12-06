@@ -11,31 +11,81 @@ const observerConfig = {
 
 const registries = new WeakMap();
 
+/**
+ * Extend from this class to create a custom attribute observer
+ */
 export class CustomAttribute {
   #host;
   #name;
 
+  /**
+   * Get the host element that has the custom attribute
+   *
+   * @return  {HTMLElement}
+   */
   get host() {
     return this.#host;
   }
 
+  /**
+   * Get the attribute value. Returns a boolean for boolean attributes
+   *
+   * @return  {string|boolean}  Attribute value
+   */
   get value() {
     return this.#host.getAttribute(this.#name);
   }
 
+  /**
+   * Attribute name
+   *
+   * @return {string}
+   */
+  get name() {
+    return this.#name;
+  }
+
+  /**
+   * Register a new custom attribute
+   *
+   * @param   {string}  name  Custom attribute name
+   * @param   {HTMLElement}  host  Host element
+   *
+   * @return  {void}
+   */
   constructor(name, host) {
     this.#host = host;
     this.#name = name;
   }
 
+  /**
+   * Callback when attribute is first seen in DOM. Will also be called on the initial pass after registering a custom attribute if it already exists
+   *
+   * @param {string} _value Attribute value
+   *
+   * @return {void}
+   */
   connectedCallback(_value) {
     // console.log("native created");
   }
 
+  /**
+   * Callback for attribute value changes
+   *
+   * @param {string} _newValue  New value
+   * @param {string} _oldValue  Old value
+   *
+   * @return {void}
+   */
   changedCallback(_newValue, _oldValue) {
     // console.log("native changed");
   }
 
+  /**
+   * Callback for when attribute gets removed or the host element gets removed from DOM
+   *
+   * @return {void}
+   */
   disconnectedCallback() {
     // console.log("native removed");
   }
@@ -55,6 +105,30 @@ export function registerAttribute(
   root = document,
   childList = true
 ) {
+  if (typeof name !== "string") {
+    throw new Error(
+      `registerAttribute: expected parameter name to be of type string but received ${typeof name}`
+    );
+  }
+
+  if (!(customAttribute instanceof CustomAttribute)) {
+    throw new Error(
+      `registerAttribute: expected parameter customAttribute to be an instance of CustomAttribute but received ${customAttribute}`
+    );
+  }
+
+  if (!(root instanceof HTMLElement)) {
+    throw new Error(
+      `registerAttribute: expected parameter root to be an instance of HTMLElement but received ${root}`
+    );
+  }
+
+  if (typeof childList !== "boolean") {
+    throw new Error(
+      `registerAttribute: expected parameter childList to be of type boolean but received ${typeof childList}`
+    );
+  }
+
   const observedElements = new WeakMap();
   const existingObserver = registries.get(root);
   let observer;
