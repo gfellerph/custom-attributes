@@ -1,16 +1,5 @@
 // https://github.com/WICG/webcomponents/issues/1029
 
-const observerConfig = {
-  attributes: true,
-  subtree: true,
-  attributeOldValue: true,
-  characterData: false,
-  characterDataOldValue: false,
-  childList: true,
-};
-
-const registries = new WeakMap();
-
 /**
  * Extend from this class to create a custom attribute observer
  */
@@ -34,6 +23,17 @@ export class CustomAttribute {
    */
   get value() {
     return this.#host.getAttribute(this.#name);
+  }
+
+  /**
+   * Set attribute value
+   *
+   * @param {string} val New value
+   *
+   * @return {void}
+   */
+  set value(val) {
+    this.#host.setAttribute(this.#name, val);
   }
 
   /**
@@ -91,6 +91,17 @@ export class CustomAttribute {
   }
 }
 
+const defaultObserverConfig = {
+  attributes: true,
+  subtree: true,
+  attributeOldValue: true,
+  characterData: false,
+  characterDataOldValue: false,
+  childList: true,
+};
+
+const registries = new WeakMap();
+
 /**
  * Register a custom attribute
  * @param {string} name The name of the custom attribute
@@ -99,7 +110,7 @@ export class CustomAttribute {
  * @param {boolean} [childList=false] Specify if children of root should be observed as well
  * @returns
  */
-export function registerAttribute(
+export function defineCustomAttribute(
   name,
   customAttribute,
   root = document,
@@ -107,25 +118,25 @@ export function registerAttribute(
 ) {
   if (typeof name !== "string") {
     throw new Error(
-      `registerAttribute: expected parameter name to be of type string but received ${typeof name}`
+      `defineCustomAttribute: expected parameter name to be of type string but received ${typeof name}`
     );
   }
 
   if (!(customAttribute instanceof CustomAttribute)) {
     throw new Error(
-      `registerAttribute: expected parameter customAttribute to be an instance of CustomAttribute but received ${customAttribute}`
+      `defineCustomAttribute: expected parameter customAttribute to be an instance of CustomAttribute but received ${customAttribute}`
     );
   }
 
   if (!(root instanceof HTMLElement)) {
     throw new Error(
-      `registerAttribute: expected parameter root to be an instance of HTMLElement but received ${root}`
+      `defineCustomAttribute: expected parameter root to be an instance of HTMLElement but received ${root}`
     );
   }
 
   if (typeof childList !== "boolean") {
     throw new Error(
-      `registerAttribute: expected parameter childList to be of type boolean but received ${typeof childList}`
+      `defineCustomAttribute: expected parameter childList to be of type boolean but received ${typeof childList}`
     );
   }
 
@@ -138,7 +149,7 @@ export function registerAttribute(
     // Attribute observer already defined
     if (existingObserver.attributes.includes(name)) {
       console.error(
-        `Failed to execute 'registerAttribute': the name "${name}" has already been used within the scope of ${root}.`
+        `Failed to execute 'defineCustomAttribute': the name "${name}" has already been used within the scope of ${root}.`
       );
       return;
     }
@@ -147,10 +158,46 @@ export function registerAttribute(
     // Reset observer to start observing with new attribute filter
     observer.disconnect();
   } else {
-    observer = new MutationObserver(mutationHandler);
+    observer = new MutationObserver(
+      mutationHandler(customAttribute, observedElements)
+    );
   }
 
-  function mutationHandler(mutationList) {
+  // Start listening to changes
+  observer.observe(root, {
+    ...defaultObserverConfig,
+    attributeFilter,
+    childList,
+  });
+
+  // Initial pass
+  if (childList) {
+    root.querySelectorAll(`[${name}]`).forEach((element) => {
+      newAttribute(element, customAttribute, observedElements);
+    });
+  } else if (root instanceof Element) {
+    newAttribute(root, customAttribute, observedElements);
+  } else {
+    throw new Error(
+      `Custom Attribute: Can't register custom attribute on root (${root}) of type ${typeof root}. Root must be a valid element node.`
+    );
+  }
+}
+
+/**
+ * Initiate a new instance
+ * @param {HTMLElement} element Element with target attribute
+ * @param {CustomAttribute.constructor} customAttribute Class extending CustomAttribute
+ * @param {WeakMap} observedElements Cache of observed elements
+ */
+function newAttribute(element, customAttribute, observedElements) {
+  const cls = new customAttribute(name, element);
+  cls.connectedCallback(element.getAttribute(name));
+  observedElements.set(element, cls);
+}
+
+function mutationHandler(customAttribute, observedElements) {
+  return function (mutationList) {
     for (let record of mutationList) {
       // Element (or parent of element) got removed
       if (record.type === "childList" && record.removedNodes.length > 0) {
@@ -158,6 +205,7 @@ export function registerAttribute(
           if (!(removedNode instanceof Element)) {
             continue;
           }
+
           if (
             removedNode.hasAttribute(name) &&
             observedElements.has(removedNode)
@@ -183,11 +231,12 @@ export function registerAttribute(
           if (!(addedNode instanceof Element)) {
             continue;
           }
+
           if (addedNode.hasAttribute(name)) {
-            newAttribute(addedNode);
+            newAttribute(addedNode, customAttribute, observedElements);
           }
           addedNode.querySelectorAll(`[${name}]`).forEach((node) => {
-            newAttribute(node);
+            newAttribute(node, customAttribute, observedElements);
           });
         }
         return;
@@ -199,7 +248,7 @@ export function registerAttribute(
 
         if (oldValue === null) {
           // New attribute
-          newAttribute(record.target);
+          newAttribute(record.target, customAttribute, observedElements);
         } else if (newValue === null && observedElements.has(record.target)) {
           // Deleted
           const cls = observedElements.get(record.target);
@@ -215,31 +264,5 @@ export function registerAttribute(
         }
       }
     }
-  }
-
-  /**
-   * Initiate a new instance
-   * @param {HTMLElement} element Element with target attribute
-   */
-  function newAttribute(element) {
-    const cls = new customAttribute(name, element);
-    cls.connectedCallback(element.getAttribute(name));
-    observedElements.set(element, cls);
-  }
-
-  // Start listening to changes
-  observer.observe(root, { ...observerConfig, attributeFilter, childList });
-
-  // Initial pass
-  if (childList) {
-    root.querySelectorAll(`[${name}]`).forEach((element) => {
-      newAttribute(element);
-    });
-  } else if (root instanceof Element) {
-    newAttribute(root);
-  } else {
-    throw new Error(
-      `Custom Attribute: Can't register custom attribute on root (${root}) of type ${typeof root}. Root must be a valid element node.`
-    );
-  }
+  };
 }

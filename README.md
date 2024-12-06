@@ -13,7 +13,7 @@ npm install custom-attributes
 Custom attributes lets you create classes with lifecycle hooks, similar to custom elements.
 
 ```js
-import { registerAttribute, CustomAttribute } from 'custom-attributes';
+import { defineCustomAttribute, CustomAttribute } from 'custom-attributes';
 
 class MyAttribute extends CustomAttribute {
   connectedCallback() {
@@ -29,27 +29,27 @@ class MyAttribute extends CustomAttribute {
   }
 }
 
-registerAttribute('my-attribute', MyAttribute);
+defineCustomAttribute('my-attribute', MyAttribute);
 ```
 
 ## Documentation
 
 ### `CustomAttribute`
 
-| Member | Type | Description |
-| :--- | :--- | :--- |
-| `get name` | `string` | Attribute name |
-| `get host` | `HTMLElement` | Host element |
-| `get value` | `string` | Attribute value |
-| `connectedCallback` | `(value: string) => void` | Called when attribute enters the DOM or after registration if attribute was already present |
-| `changedCallback` | `(newValue: string, oldValue: string) => void` | Called when the attribute value changes |
-| `disconnectedCallback` | `() => void` | Called when attribute gets deleted or the host element gets removed from DOM |
+| Member                 | Type                                           | Description                                                                                 |
+| :--------------------- | :--------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `get name`             | `string`                                       | Attribute name                                                                              |
+| `get host`             | `HTMLElement`                                  | Host element                                                                                |
+| `get value`            | `string`                                       | Attribute value                                                                             |
+| `connectedCallback`    | `(value: string) => void`                      | Called when attribute enters the DOM or after registration if attribute was already present |
+| `changedCallback`      | `(newValue: string, oldValue: string) => void` | Called when the attribute value changes                                                     |
+| `disconnectedCallback` | `() => void`                                   | Called when attribute gets deleted or the host element gets removed from DOM                |
 
-### `registerAttribute`
+### `defineCustomAttribute`
 
-| Parameter | Type | Default value | Description |
-| :--- | :--- | :--- | :--- |
-| `name` | `string` | | Attribute name. Should contain a dash (and not start with `aria-`) to prevent clashes with standard browser attribute names.  |
-| `customAttribute` | `CustomAttribute.constructor` | | A class for registering the custom attribute |
-| `scope` | `HTMLElement` | `document.body` | Element scope |
-| `childList` | `boolean` | `true` | Sets the `childList` option of mutation observers. Set this to false if you only want to observe the element defined as `scope`. Observes all child elements of `scope` if true. |
+| Parameter         | Type                          | Default value   | Description                                                                                                                                                                      |
+| :---------------- | :---------------------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | `string`                      |                 | Attribute name. Should contain a dash (and not start with `aria-`) to prevent clashes with standard browser attribute names.                                                     |
+| `customAttribute` | `CustomAttribute.constructor` |                 | A class for registering the custom attribute                                                                                                                                     |
+| `scope`           | `HTMLElement`                 | `document.body` | Element scope                                                                                                                                                                    |
+| `childList`       | `boolean`                     | `true`          | Sets the `childList` option of mutation observers. Set this to false if you only want to observe the element defined as `scope`. Observes all child elements of `scope` if true. |
