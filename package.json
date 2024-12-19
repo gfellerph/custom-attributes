@@ -1,16 +1,19 @@
 {
   "name": "custom-attributes",
   "version": "0.0.1-alpha.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Lifecycles for HTML attributes",
+  "main": "main.js",
+  "files": [
+    "main.js"
+  ],
   "scripts": {
     "start": "http-server -p 3000",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Philipp Gfeller <1659006+gfellerph@users.noreply.github.com>",
+  "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.27.11",
     "@playwright/test": "^1.48.2",
