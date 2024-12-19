@@ -1,6 +1,6 @@
 {
   "name": "custom-attributes",
-  "version": "1.0.0",
+  "version": "0.0.1-alpha.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@changesets/cli": "^2.27.11",
     "@playwright/test": "^1.48.2",
     "@types/node": "^22.9.0",
     "http-server": "^14.1.1",

@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "custom-attributes": "0.0.0"
+  },
+  "changesets": [
+    "curvy-onions-protect"
+  ]
+}
